@@ -1,82 +1,56 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import Error from './Error';
 import Li from './Li';
+import Input from './Input';
 
-class Section extends Component {
-  constructor() {
-    super();
-    this.state = {
-      input: '',
-      list: [],
-      error: '',
-    };
-  }
+import { updateLocalStorage, getLocalStorage } from '../utils/localStorage';
 
-  componentDidMount() {
-    this.renderLocalStorage();
-  }
+function Section() {
+  const [inputTask, setInputTask] = useState('');
+  const [error, setError] = useState(false);
+  const [listTask, setListTask] = useState([]);
 
-  componentDidUpdate() {
-    this.updateLoacalStorage();
-  }
+  useEffect(() => {
+    const storage = getLocalStorage('lista');
+    if(storage) setListTask(storage);
+  }, []);
 
-  renderLocalStorage = () => {
-    const storage = localStorage.getItem('lista');
-    if(storage) {
-      this.setState({ list: JSON.parse(storage) });
+  const handleClickBtn = () => {
+    if (inputTask.length <  2 || inputTask.length > 50) {
+      setError(true);
+    } else {
+      setListTask([...listTask, inputTask]);
+      updateLocalStorage('lista', inputTask);
+      setError(false);
+      setInputTask('');
     }
   };
 
-  updateLoacalStorage = () => {
-    const { list } = this.state;
-    localStorage.setItem('lista', JSON.stringify(list));
-  };
-
-  handleClickBtn = () => {
-    const { input } = this.state;
-    this.setState((anterior) => ({
-      list: input.length <  2 || input.length > 40 ? anterior.list : [...anterior.list, input],
-      input: '',
-      error: input.length <  2 || input.length > 40 ? 'Campo Invalido' : '',
-    }));
-  };
-
-  handleClickDelete = (event) => {
-    const { list } = this.state;
-    const textList = event.target.parentNode.parentNode.childNodes[0].innerText;
-    console.log(event);
-    const filterList = list.filter((item) => item !== textList)
-    this.setState({
-      list: filterList,
-    });
-  };
-
-  handleChange = ({ target: { value } }) => {
-    this.setState({
-      input: value,
-      localStorage: false,
-    });
-  };
-
-  render() {
-    const { input, error, list } = this.state;
-
-    return (
-      <section className="content-list">
-        <div className="newList">
-          <label className="form-label title-input" htmlFor="newList">Tarefas</label>
-          <input onChange={ this.handleChange } className="form-control" value={ this.state.input } type="text" name="newList" id="newList" placeholder="Nova Tarefa" />
-          <p className="limit">Limite de 40 Caracteres</p>
-          <button className="btn btn-success" onClick={ this.handleClickBtn }>Adicionar Tarefa</button>
-        </div>
-        { error !== '' ? <Error input={ input } /> : '' }
-        <h3 className="title">Lista de Tarefas</h3>
-        <>
-          {list.map((item, index) => <Li event={ this.handleClickDelete } tarefa={ item } key={ index } /> )}
-        </>
-      </section>
-    );
-  }
+  return (
+    <section>
+      <div className="newList">
+        <Input
+          change={ setInputTask }
+          value={ inputTask }
+          text="Tarefas"
+        />
+        <p className="limit">Limite de 40 Caracteres</p>
+        <button
+          className="btn btn-success"
+          onClick={ handleClickBtn }
+        >
+          Adicionar Tarefa
+        </button>
+      </div>
+      { error && <Error input={ inputTask } />}
+      <h3 className="title">Lista de Tarefas</h3>
+      <>
+        {listTask
+          .map((task, index) => <Li listTask={ listTask } setListTask={ setListTask } tarefa={ task } key={ index } /> )}
+      </>
+    </section>
+  );
 }
 
 export default Section;
